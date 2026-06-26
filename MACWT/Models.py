@@ -72,11 +72,11 @@ class SpaWaveletTransform(nn.Module):
         original_features = x
 
         # 小波分解 (Eq.1)
-        decomposed1 = F.relu(self.decompose1(x))      # (N, d_h1)
+        decomposed1 = F.relu(self.decompose1(x))      # (N, d_h1)    公式3
         decomposed2 = F.relu(self.decompose2(decomposed1))  # (N, d_h2) ← 最粗
 
         # 小波重建 (Eq.2)
-        reconstructed1 = F.relu(self.reconstruct1(decomposed2))  # (N, d_h1)
+        reconstructed1 = F.relu(self.reconstruct1(decomposed2))  # (N, d_h1)  公式4
         reconstructed = self.reconstruct2(reconstructed1)         # (N, out_features)
 
         # 残差投影
@@ -84,7 +84,7 @@ class SpaWaveletTransform(nn.Module):
 
         # 门控融合 (Eq.3): α ⊙ reconstructed + (1-α) ⊙ residual
         alpha = torch.sigmoid(self.alpha_logit)  # (out_features,)
-        x_wavelet = alpha * reconstructed + (1. - alpha) * residual
+        x_wavelet = alpha * reconstructed + (1. - alpha) * residual  #公式五
 
         if return_all_scales:
             return {
