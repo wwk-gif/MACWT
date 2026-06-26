@@ -539,7 +539,7 @@ class SpaCross_model(nn.Module):
         else:
             causal_indep_loss = torch.tensor(0.0, device=causal_features.device)
 
-        # L_causal = γ₁ L_spatial + γ₂ L_indep
+        # L_causal = γ₁ L_spatial + γ₂ L_indep 公式10
         total_loss = self.gamma1 * spatial_loss + self.gamma2 * causal_indep_loss
 
         return total_loss * self.causal_reg_weight
