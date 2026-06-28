@@ -398,8 +398,8 @@ class Decoder(nn.Module):
         return self.layer1(x, edge_index)
 
 
-# ==================== 修改SpaCross_model类 ====================
-class SpaCross_model(nn.Module):
+# ==================== 修改MACWT_model类 ====================
+class MACWT_model(nn.Module):
     def __init__(self, input_dim, config, imputation=True):
         super().__init__()
         self.imputation = imputation
@@ -412,7 +412,7 @@ class SpaCross_model(nn.Module):
         self.gamma1 = config.get('gamma1', 0.5)  # γ₁: spatial smoothness
         self.gamma2 = config.get('gamma2', 0.2)  # γ₂: feature independence
 
-        print(f"\n增强的SpaCross模型初始化 (默认启用增强功能):")
+        print(f"\n增强的MACWT模型初始化 (默认启用增强功能):")
         print(f"  输入维度: {input_dim}")
         print(f"  潜在维度: {self.dec_in_dim}")
         print(f"  使用小波变换: {self.use_wavelet}")
