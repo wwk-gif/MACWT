@@ -301,9 +301,9 @@ def main_repair(adata,df,device):
     from tqdm.auto import tqdm
     import numpy as np
     from torchvision import transforms, datasets
-    # DDPM模型
+    # DDPM model
 
-    # 定义4种生成β的方法，均需传入总步长T，返回β序列
+    # Define 4 methods to generate beta; all need total steps T, return beta sequence
     def cosine_beta_schedule(timesteps, s=0.008):
         steps = timesteps + 1
         x = torch.linspace(0, timesteps, steps)
@@ -332,14 +332,14 @@ def main_repair(adata,df,device):
         return torch.sigmoid(betas) * (beta_end - beta_start) + beta_start
 
 
-    # 从序列a中取t时刻的值a[t](batch_size个)，维度与x_shape相同，第一维为batch_size
+    # Extract values a[t] at time t from sequence a (batch_size items); dimensions match x_shape, first dim is batch_size
     def extract(a, t, x_shape):
         batch_size = t.shape[0]
         out = a.gather(-1, t.cpu())
         return out.reshape(batch_size, *((1,) * (len(x_shape) - 1))).to(t.device)
 
 
-    # 扩散过程采样，即通过x0和t计算xt
+    # Diffusion forward sampling: compute x_t from x_0 and t
     def q_sample(x_start, t, noise=None):
         std_dev = 0.0001
         if noise is None:
@@ -349,7 +349,7 @@ def main_repair(adata,df,device):
         return sqrt_alphas_cumprod_t * x_start + sqrt_one_minus_alphas_cumpord_t * noise
 
 
-    # 损失函数loss，共3种计算方式，原文使用l2
+    # Loss function; 3 types available, original paper uses l2
     def p_losses(denoise_model, x_start, t, noise=None, loss_type="l2"):
         
         std_dev = 0.0001
@@ -371,7 +371,7 @@ def main_repair(adata,df,device):
         return loss
 
 
-    # 逆扩散过程采样，即通过xt和t计算xt-1，此过程需要通过网络
+    # Reverse diffusion sampling: compute x_{t-1} from x_t and t via network
     @torch.no_grad()
     def p_sample(model, x, t, t_index):
         betas_t = extract(betas, t, x.shape)
@@ -388,7 +388,7 @@ def main_repair(adata,df,device):
             return model_mean + torch.sqrt(posterior_variance_t) * noise
 
 
-    # 逆扩散过程T次采样，即通过xT和T计算xi，获得每一个时刻的图像列表[xi]，此过程需要通过网络
+    # Reverse diffusion for T steps: compute x_i from x_T, return list of images [x_i] at each step via network
     @torch.no_grad()
     def p_sample_loop(model, shape):
         device = next(model.parameters()).device
@@ -401,7 +401,7 @@ def main_repair(adata,df,device):
         return imgs
 
 
-    # 逆扩散过程T次采样，允许传入batch_size指定生成图片的个数，用于生成结果的可视化
+    # Reverse diffusion for T steps; batch_size specifies number of generated images for visualization
     @torch.no_grad()
     def sample(model, image_size, batch_size=16, channels=1):
         return p_sample_loop(model, shape=(batch_size, channels, image_size, image_size))
@@ -418,37 +418,37 @@ def main_repair(adata,df,device):
 
 
     
-    # 读取CSV文件
+    # Read CSV file
 
-    # 将DataFrame转换为numpy数组
+    # Convert DataFrame to numpy array
     data_matrix = df.values
-    # 数据预处理：将每个数值减去该行的最小值，然后除以该行的最大值减去最小值
+    # Data preprocessing: subtract row min, then divide by (row max - row min)
     # row_min = np.min(data_matrix, axis=1, keepdims=True)
     # row_max = np.max(data_matrix, axis=1, keepdims=True)
     # scaled_matrix = (data_matrix - row_min) / (row_max - row_min) #* 255
 
     scaled_matrix = data_matrix #* 255
-    # 将数据重新排列为4015个64x64的矩阵
+    # Rearrange data into 4015 matrices of 64x64
     n_samples = scaled_matrix.shape[0]
     image_size = int(np.sqrt(scaled_matrix.shape[1]))
     reshaped_matrix = scaled_matrix.reshape(n_samples, image_size, image_size)
     image_tensors = torch.tensor(reshaped_matrix, dtype=torch.float32).unsqueeze(1) 
-    timesteps = 2  # 总步长T
-    # 以下参数均为序列(List)，需要传入t获得对应t时刻的值 xt = X[t]
-    betas = linear_beta_schedule(timesteps=timesteps)  # 选择一种方式，生成β(t)
-    alphas = 1. - betas  # α(t)
-    alphas_cumprod = torch.cumprod(alphas, axis=0)  # α的连乘序列，对应α_bar(t)
-    alphas_cumprod_prev = F.pad(alphas_cumprod[:-1], (1, 0), value=1.0)  # 将α_bar的最后一个值删除，在最开始添加1，对应前一个时刻的α_bar，即α_bar(t-1)
-    sqrt_recip_alphas = torch.sqrt(1. / alphas)  # 1/根号下α(t)
-    sqrt_alphas_cumprod = torch.sqrt(alphas_cumprod)  # 根号下α_bar(t)
-    sqrt_one_minus_alphas_cumpord = torch.sqrt(1. - alphas_cumprod)  # 根号下(1-α_bar(t))
-    posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)  # β(t)x(1-α_bar(t-1))/(1-α_bar(t))，即β^~(t)
+    timesteps = 2  # Total steps T
+    # All parameters below are sequences (List); pass t to get the value at time t: x_t = X[t]
+    betas = linear_beta_schedule(timesteps=timesteps)  # Choose a method to generate beta(t)
+    alphas = 1. - betas  # alpha(t)
+    alphas_cumprod = torch.cumprod(alphas, axis=0)  # Cumulative product of alpha, i.e. alpha_bar(t)
+    alphas_cumprod_prev = F.pad(alphas_cumprod[:-1], (1, 0), value=1.0)  # Remove last value of alpha_bar, prepend 1, i.e. alpha_bar(t-1)
+    sqrt_recip_alphas = torch.sqrt(1. / alphas)  # 1 / sqrt(alpha(t))
+    sqrt_alphas_cumprod = torch.sqrt(alphas_cumprod)  # sqrt(alpha_bar(t))
+    sqrt_one_minus_alphas_cumpord = torch.sqrt(1. - alphas_cumprod)  # sqrt(1 - alpha_bar(t))
+    posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)  # beta(t) * (1 - alpha_bar(t-1)) / (1 - alpha_bar(t)), i.e. beta_tilde(t)
     total_epochs = 50
     channels = 1
     batch_size = 256
     lr = 1e-4
 
-    # 创建一个空字典用于存储结果
+    # Create an empty dict to store results
     result_dict = {}
 
     for i in tqdm(range(len(image_tensors)), desc='Processing'):
@@ -482,42 +482,42 @@ def main_repair(adata,df,device):
 
         
         print(len(spot_dict))
-        # 将结果存储到字典中
+        # Store results in dict
         result_dict[i] = spot_dict
 
     def mse_similarity(A, B):
         """
-        计算两个矩阵的MSE相似性
+        Compute MSE similarity between two matrices
 
         Args:
-            A: 第一个矩阵
-            B: 第二个矩阵
+            A: first matrix
+            B: second matrix
 
         Returns:
-            MSE相似性
+            MSE similarity
         """
 
-        # 计算差值的平方和
+        # Compute sum of squared differences
         diff = A - B
         sq_diff = np.square(diff)
 
-        # 计算MSE相似性
+        # Compute MSE similarity
         return np.mean(sq_diff)
 
     NumDiff=len(result_dict[0])
 
     average_result = {}
 
-    # 使用循环打印字典数据
+    # Print dict data using loop
     for ij in range(len(result_dict)):
         
         original_matrix = image_tensors[ij].squeeze().cpu().numpy()
-        # 计算所有矩阵与原始数据方阵的MSE相似性
+        # Compute MSE similarity of all matrices vs original data matrix
         similarities = {}
         for i in range(NumDiff):
             similarities[i] = mse_similarity(original_matrix, result_dict[ij][i])
 
-        # 选择最相近的4个方阵
+        # Select the 4 most similar matrices
         most_similar_matrices = []
         for i in range(2):
             min_similarity = float("inf")
@@ -529,7 +529,7 @@ def main_repair(adata,df,device):
 
         most_similar_matrices.append(min_idx)
         #print(most_similar_matrices)
-        # 计算最相近的5个方阵相加取平均
+        # Average the 5 most similar matrices
         average_matrix = np.zeros((64, 64))
         for i in most_similar_matrices:
             average_matrix += result_dict[ij][i]
@@ -538,7 +538,7 @@ def main_repair(adata,df,device):
         
         # average_matrix=(average_matrix+ original_matrix)/2
         average_result[ij] = average_matrix
-        # 打印结果
+        # Print result
         print(average_matrix)
         
         print(ij, ':', average_result[ij])
@@ -555,14 +555,14 @@ def main_repair(adata,df,device):
 
 
 
-    # 将修复的每个图像存储为一维向量并合并为一个大矩阵
+    # Store each repaired image as a 1D vector and merge into a large matrix
     repaired_images_matrix = np.vstack([revector_result[i].flatten() for i in range(len(revector_result))])
-    # 输出结果
-    # print("合并后的矩阵：")
+    # Output result
+    # print("Merged matrix:")
     # print(repaired_images_matrix)
 
-    # 输出结果
-    # print("拼接后的矩阵：")
+    # Output result
+    # print("Concatenated matrix:")
     # print(matrix)
     np.savetxt('example.csv', repaired_images_matrix, delimiter=',')
 

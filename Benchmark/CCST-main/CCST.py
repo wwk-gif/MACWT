@@ -148,7 +148,7 @@ def PCA_process(X, nps):
     from sklearn.decomposition import PCA
     print('Shape of data to PCA:', X.shape)
     pca = PCA(n_components=nps)
-    X_PC = pca.fit_transform(X)     #等价于pca.fit(X) pca.transform(X)
+    X_PC = pca.fit_transform(X)     # Equivalent to pca.fit(X); pca.transform(X)
     print('Shape of data output by PCA:', X_PC.shape)
     print('PCA recover:', pca.explained_variance_ratio_.sum())
     return X_PC

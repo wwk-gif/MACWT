@@ -192,7 +192,7 @@ class DenoiseST():
                 copyemb=self.emb
             # self.loss_sl_1 = self.loss_CSL(ret, self.label_CSL)
             # self.loss_sl_2 = self.loss_CSL(ret_a, self.label_CSL)
-            ###这是autoencoder的loss函数feature和emb对比
+            ### Autoencoder loss function: compare feature and embedding
             self.loss_feat = F.mse_loss(self.features, self.emb)
 
             zinb_loss = zinb_loss(self.features, meanbatch, dispbatch, pibatch,device=self.device)

@@ -31,7 +31,7 @@ def normalize_mtx(mtx,target_sum):
     mtx = normalize(mtx,axis=1)
     return mtx
     
-# 计算单细胞亚群差异基因
+# Compute differentially expressed genes for single-cell subpopulations
 def find_sc_markers(sc_ad, celltype_key, layer='norm', deg_method=None, log2fc_min=0.5, pval_cutoff=0.01, n_top_markers=200, pct_diff=None, pct_min=0.1):
     print('### Finding marker genes...')
     
@@ -63,7 +63,7 @@ def find_sc_markers(sc_ad, celltype_key, layer='norm', deg_method=None, log2fc_m
     all_marker_genes = np.unique(marker_gene_df.names)
     return all_marker_genes
 
-# 计算空间HVG
+# Compute spatially highly variable genes
 def find_st_hvg(st_ad,n_top_hvg=None):
     print('### Finding HVG in spatial...')
     sc.pp.highly_variable_genes(st_ad,n_top_genes=n_top_hvg,flavor='seurat_v3')

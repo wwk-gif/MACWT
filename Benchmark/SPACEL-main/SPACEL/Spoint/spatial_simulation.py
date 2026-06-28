@@ -12,7 +12,7 @@ import logging
 #                     datefmt='%m-%d %H:%M')
 # logging.getLogger().setLevel(print)
 
-# 汇总每个spot的细胞数，统计细胞数的分布
+# Aggregate cell counts per spot and compute their distribution
 def count_cell_counts(cell_counts):
     cell_counts = np.array(cell_counts.values,dtype=int).reshape(-1)
     counts_list = np.array(np.histogram(cell_counts,range=[0,np.max(cell_counts)+1],bins=np.max(cell_counts)+1)[0],dtype=int)
@@ -33,7 +33,7 @@ def numba_set_seed(seed):
     np.random.seed(seed)
     random.seed(seed)
 
-# 对某个axis调用numpy函数(numba版本)
+# Apply numpy function along an axis (numba version)
 @nb.njit
 def np_apply_along_axis(func1d, axis, arr):
     assert arr.ndim == 2
@@ -48,17 +48,17 @@ def np_apply_along_axis(func1d, axis, arr):
             result[i] = func1d(arr[i, :])
     return result
 
-# 对某个axis计算均值(numba版本)
+# Compute mean along an axis (numba version)
 @nb.njit
 def np_mean(array, axis):
     return np_apply_along_axis(np.mean, axis, array)
 
-# 对某个axis计算加和(numba版本)
+# Compute sum along an axis (numba version)
 @nb.njit
 def np_sum(array, axis):
     return np_apply_along_axis(np.sum, axis, array)
 
-# 根据参数采样单细胞数据，生成模拟spot(numba版本)
+# Sample single-cell data based on parameters to generate simulated spots (numba version)
 @jit(nopython=True,parallel=True)
 def sample_cell(param_list,cluster_p,clusters,cluster_id,sample_exp,sample_cluster,cell_p_balanced,downsample_fraction=None,data_augmentation=True,max_rate=0.8,max_val=0.8,kth=0.2):
     exp = np.empty((len(param_list), sample_exp.shape[1]),dtype=np.float32)
@@ -135,7 +135,7 @@ def init_sample_prob(sc_ad,celltype_key):
     sc_ad.uns['cluster_p_unbalance'] = cluster_p_unbalance
     return sc_ad
 
-# 将表达矩阵转化成array
+# Convert expression matrix to array
 def generate_sample_array(sc_ad, used_genes):
     if used_genes is not None:
         sc_df = sc_ad.to_df().loc[:,used_genes]
@@ -143,21 +143,21 @@ def generate_sample_array(sc_ad, used_genes):
         sc_df = sc_ad.to_df()
     return sc_df.values
 
-# 从均匀分布中获取每个spot采样的细胞数和细胞类型数
+# Sample cell counts and cluster counts per spot from a uniform distribution
 def get_param_from_uniform(num_sample,cells_min=None,cells_max=None,clusters_min=None,clusters_max=None):
 
     cell_count = np.asarray(np.ceil(np.random.uniform(int(cells_min),int(cells_max),size=num_sample)),dtype=int)
     cluster_count = np.asarray(np.ceil(np.clip(np.random.uniform(clusters_min,clusters_max,size=num_sample),1,cell_count)),dtype=int)
     return cell_count, cluster_count
 
-# 从高斯分布中获取每个spot采样的细胞数和细胞类型数
+# Sample cell counts and cluster counts per spot from a Gaussian distribution
 def get_param_from_gaussian(num_sample,cells_min=None,cells_max=None,cells_mean=None,cells_std=None,clusters_mean=None,clusters_std=None):
 
     cell_count = np.asarray(np.ceil(np.clip(np.random.normal(cells_mean,cells_std,size=num_sample),int(cells_min),int(cells_max))),dtype=int)
     cluster_count = np.asarray(np.ceil(np.clip(np.random.normal(clusters_mean,clusters_std,size=num_sample),1,cell_count)),dtype=int)
     return cell_count,cluster_count
 
-# 从用空间数据估计的cell counts中获取每个spot采样的细胞数和细胞类型数
+# Sample cell counts and cluster counts per spot from spatial data-estimated cell counts
 def get_param_from_cell_counts(
     num_sample,
     cell_counts,
@@ -176,7 +176,7 @@ def get_param_from_cell_counts(
         raise TypeError('Not correct sample method.')
     return cell_count,cluster_count
 
-# 获取每个cluster的采样概率
+# Get sampling probability for each cluster
 def get_cluster_sample_prob(sc_ad,mode):
     if mode == 'unbalance':
         cluster_p = sc_ad.uns['cluster_p_unbalance'].values
@@ -199,7 +199,7 @@ def cal_downsample_fraction(sc_ad,st_ad,celltype_key=None):
     else:
         return None
 
-# 生成模拟数据
+# Generate simulated data
 def generate_simulation_data(
     sc_ad,
     celltype_key,

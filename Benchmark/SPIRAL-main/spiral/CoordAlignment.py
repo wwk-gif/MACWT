@@ -128,7 +128,7 @@ class CoordAlignment:
                 coord2=pd.read_csv(self.output_dirs+"coord_"+str(ub[i])+"_"+str(clust)+self.flags+".csv",header=0,index_col=0,sep=",")
                 coord1=coord1.loc[embed1.index,:]
                 coord2=coord2.loc[embed2.index,:]
-                ###每个batch内部spot的空间距离####
+                ### Spatial distance of spots within each batch ####
                 a=np.float64(nx.from_numpy(coord1.values[:,:2]))
                 b=np.float64(nx.from_numpy(coord2.values[:,:2]))
                 D1=ot.dist(a,a, metric='euclidean')
@@ -136,7 +136,7 @@ class CoordAlignment:
                 if self.norm:
                     D1 /= nx.min(D1[D1>0])
                     D2 /= nx.min(D2[D2>0])
-                ####两个batch spot的低维表示的距离#####
+                #### Distance between low-dim representations of two batch spots #####
                 X1,X2 = nx.from_numpy(embed1.values), nx.from_numpy(embed2.values)
                 if self.dissimilarity.lower()=='euclidean' or self.dissimilarity.lower()=='euc':
                     M = ot.dist(X1,X2)
@@ -145,10 +145,10 @@ class CoordAlignment:
                     s2 = X2 + 0.01
                     M = kl_divergence_backend(s1, s2)
                     M = nx.from_numpy(M)
-                ####每个batch的spot的分布#####
+                #### Spot distribution of each batch #####
                 d1 = nx.ones((embed1.shape[0],))/embed1.shape[0]
                 d2 = nx.ones((embed2.shape[0],))/embed2.shape[0]
-                ####计算mapping#####
+                #### Compute mapping #####
                 G0 = d1[:, None] * d2[None, :]
                 res=self.gwd(M,D1,D2,d1,d2,G_init=G0,alpha=self.alpha)
                 pi=pd.DataFrame(res,index=embed1.index,columns=embed2.index)

@@ -56,7 +56,7 @@ def plot_3d(
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(projection='3d')
     if (elev is not None) and (azim is not None):
-        ax.view_init(elev, azim)  # 设定视角
+        ax.view_init(elev, azim)  # Set viewing angle
     if color is None:
         ax.scatter(loc[:,0], loc[:,1], loc[:,2],c=val,*args,**kwargs)
     else:

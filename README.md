@@ -1,35 +1,81 @@
 # MACWT
-## Overview
-MACWT is a comprehensive analytical framework designed for spatial transcriptomics data, aiming to enhance the accuracy of spatial pattern recognition and cross-slice consistency. The approach comprises key modules including data preprocessing, masked-enhanced self-supervised learning, hybrid graph modeling, and cross-slice integration, utilizing graph neural networks and contrastive learning to jointly model spatial and semantic information. 
 
-To support the integrative analysis of multi-slice spatial transcriptomics data, MACWT performs data preprocessing by first integrating gene expression matrices from multiple slices along the spot dimension. The data is then filtered and normalized to remove low-quality genes, retaining only highly variable genes for subsequent modeling. Next, principal component analysis (PCA) is applied for dimensionality reduction to decrease computational complexity. Subsequently, MACWT incorporates a 3D spatial registration method, utilizing the iterative closest point (ICP) algorithm to align spatial coordinates across different slices and dynamically construct a 3D adjacency matrix, ensuring the continuity of spatial relationships. Based on the adjusted 3D spatial coordinates, Euclidean distances are computed to construct a k-nearest neighbor (k-NN) graph, thereby forming the topological structure of the spatial graph. This ensures that the model captures the spatial continuity of neighboring spots while preserving cross-slice semantic propagation (Fig. A). 
+## Introduction
+MACWT (Multi-scale Adaptive Causal Wavelet Transform) is a comprehensive analytical framework designed for multi-slice spatially resolved transcriptomics (SRT) data. It integrates wavelet transform-based multi-scale feature extraction, causal inference-guided attention mechanisms, and multi-agent adaptive loss balancing to decipher spatial structures and correct batch effects across tissue slices. The method supports spatial domain identification, cross-slice integration, cross-developmental stage comparisons, and cross-platform data harmonization.
 
-To enhance the model's robustness against missing data and noise, MACWT introduces a cross-masked self-supervised learning mechanism (Fig. B). Specifically, two complementary masked views are randomly generated on the input features, serving respectively for feature reconstruction and latent space consistency learning. The masked feature matrix, which simulates missing information during training, improves the model’s imputation capability, while the complementary mask provides consistent supervision for the latent space, effectively mitigating overfitting in the autoencoder. The graph encoder, integrating feedforward neural networks and graph convolutional networks, leverages the graph structure to propagate features among neighboring nodes, resulting in more robust latent representations.
+---
 
-In the latent representation learning process, MACWT further enhances the reliability of these representations through a cross-masked latent consistency (CMLC) mechanism (Fig. B). The model aligns latent embeddings generated from complementary views using contrastive learning, thereby reinforcing consistency across different views and ensuring stable feature representation even when handling incomplete data or diverse data augmentation views.
+## Catalogs
+- **/MACWT**: Contains the core implementation of the MACWT algorithm.
+  - `Models.py`: MACWT model architecture, including the wavelet transform module (`SpaWaveletTransform`), causal inference module (`SpaCausalInference`), Encoder, Decoder, and the main `MACWT_model` class.
+  - `Pipeline.py`: Training pipelines (`SC_pipeline` and `SC_BC_pipeline`) with multi-agent controller integration for adaptive loss weight optimization.
+  - `GLNS.py`: Graph-based local-neighborhood sampling (GLNSampler) for constructing positive/negative pairs in contrastive learning.
+  - `Align.py`: Spatial coordinate alignment utilities.
+  - `Clust.py`: Clustering and evaluation functions.
+  - `Func.py`: Utility and helper functions.
+  - `Utils.py`: Data preprocessing utilities.
+  - `agent1.py`: Multi-agent controller with random exploration strategy for per-slice loss weight tuning.
+- **/Benchmark**: Contains implementations of 12 baseline methods for comparative evaluation (CCST, DeepST, DiffusionST, GraphST, SEDR, SPACEL, SPIRAL, STAGATE, STAligner, STitch3D, SpaGCN, stDCL).
+- **/Config**: YAML configuration files for each dataset (DLPFC, MBA, ME3, MERFISH, MOB, STARmap, osmFISH).
+- **/Reproduction_Notebook**: Jupyter notebooks to reproduce the results presented in the manuscript.
+- **requirement.txt**: List of required Python packages.
 
-To address the insufficient integration of local and global information in SRT data, MACWT has developed an adaptive hybrid spatial–semantic graph modeling method (Fig. B). Based on the latent embeddings, the model selects local spatial neighbors and global semantic cluster neighbors, fusing them into a unified mixed neighborhood. This strategy not only preserves spatial continuity but also introduces semantic consistency across regions, significantly enhancing the discriminative power in downstream tasks. By aggregating mixed neighborhood features and optimizing node embeddings with contrastive learning, the model effectively delineates the boundaries between different categories. 
+---
 
-In downstream tasks (Fig. C),  MACWT enables complex spatial domain identification within tissue slices while preserving spatial continuity and clustering accuracy. It supports the integration of consecutive slices, cross-developmental stage comparisons, and cross-platform datasets. These capabilities provide a unified framework for spatial omics studies in development, disease, and cross-species research. 
+## Environment
+The MACWT code has been implemented and tested in the following development environment:
 
-![overview.jpg](overview.jpg)
+- Python == 3.10
+- PyTorch == 2.2.2+cu118
+- PyTorch Geometric == 2.5.2
+- Scanpy == 1.10.1
+- NumPy == 1.26.3
+- SciPy == 1.13.0
+- Scikit-learn == 1.4.2
+- Pandas == 2.2.2
+- Matplotlib == 3.8.4
+- rpy2 == 3.5.16
 
-## Installations
-- NVIDIA GPU (a single Nvidia GeForce RTX 3090)
-- `pip install -r requirement.txt`
+```bash
+pip install -r requirement.txt
+```
 
-## Data
-All the datasets used in this paper can be downloaded from url：[https://zenodo.org/records/15090086](https://zenodo.org/records/15090086).
+---
 
-## Demos
-We provide two types of usage examples for MACWT:
-- **Reproduction scripts** used to replicate the results in our manuscript are available in the **Reproduction_Notebook** directory.
-- **Step-by-step tutorials** for applying MACWT to new datasets are provided in the **Tutorial_Notebook** directory, including clustering and cross-stage integration examples.
+## Dataset
+All datasets used in the manuscript can be downloaded from:
+[https://zenodo.org/records/15090086](https://zenodo.org/records/15090086)
 
+- **DLPFC**: 12 slices of human dorsolateral prefrontal cortex (Visium 10x).
+- **MBA**: Mouse Brain Atlas (MERFISH).
+- **ME3**: Mouse embryo data (Stereo-seq) across three developmental stages (E9.5, E10.5, E11.5).
+- **MERFISH**: Mouse brain data (MERFISH platform).
+- **MOB**: Mouse olfactory bulb (Slide-seqV2 and Stereo-seq).
+- **STARmap**: Mouse brain data (STARmap platform).
+- **osmFISH**: Mouse somatosensory cortex (osmFISH platform).
 
-## Contact details
-If you have any questions, please contact fangdonghai@aliyun.com and minwenwen@ynu.edu.cn.
+Configuration files for each dataset are provided in the `/Config` directory, specifying model hyperparameters, training settings, and preprocessing options.
 
-## Citing
+---
 
-Donghai Fang and Wenwen Min*. MACWT deciphers spatial structures and corrects batch effects in multi-slice spatially resolved transcriptomics. Communications Biology (2025), https://doi.org/10.1038/s42003-025-08810-5
+## How to Run the Code
+1. **Install dependencies**:
+    ```bash
+    pip install -r requirement.txt
+    ```
+
+2. **Download datasets** from [Zenodo](https://zenodo.org/records/15090086) and place them in the appropriate data directory.
+
+3. **Configure the experiment** by editing the corresponding YAML file in `/Config` (e.g., `DLPFC.yaml` for DLPFC data).
+
+4. **Run the MACWT pipeline**:
+    ```bash
+    python main.py --config Config/DLPFC.yaml
+    ```
+
+5. **To reproduce manuscript results**, run the notebooks in `/Reproduction_Notebook` corresponding to each dataset.
+
+---
+
+## Contact
+If you have any questions, please contact 332516060892@zzuli.edu.cn.
