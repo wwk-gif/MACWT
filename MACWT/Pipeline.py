@@ -17,7 +17,7 @@ from .agent1 import MultiAgentController
 
 class SC_pipeline:
     def __init__(self, adata, edge_index, num_clusters, device, config, roundseed=0, imputation=False):
-        # --- 保留你现有的所有初始化设置 ---
+        # --- Retain all existing initialization settings ---
         seed = config['seed'] + roundseed
         random.seed(seed)
         np.random.seed(seed)
@@ -57,17 +57,17 @@ class SC_pipeline:
         self.sampler = GLNSampler(self.num_clusters, self.device)
         self.anchor_pair = None
 
-        # === 初始化多智能体（替换为 per-slice agent） ===
+        # === Initialize multi-agent (replaced with per-slice agent) ===
         self.use_agent = config.get('use_agent', True)
         if self.use_agent:
-            # 从 adata.obs['slice_name'] 获得切片类别（graph_construction3D 使用的 label）
+            # Obtain slice category from adata.obs['slice_name'] (label used by graph_construction3D)
             if 'slice_name' in self.adata.obs:
-                # 确保是 category
+                # Ensure it is categorical
                 if not pd.api.types.is_categorical_dtype(self.adata.obs['slice_name']):
                     self.adata.obs['slice_name'] = self.adata.obs['slice_name'].astype('category')
                 slice_cats = list(self.adata.obs['slice_name'].cat.categories)
                 self.n_slices = len(slice_cats)
-                # spot -> slice idx 映射
+                # spot -> slice idx mapping
                 cat_to_idx = {c: i for i, c in enumerate(slice_cats)}
                 self.spot2slice = np.array([cat_to_idx[s] for s in self.adata.obs['slice_name'].values])
             else:
@@ -75,7 +75,7 @@ class SC_pipeline:
                 self.n_slices = 1
                 self.spot2slice = np.zeros(self.adata.n_obs, dtype=int)
 
-            # 使用多智能体控制器（每个切片一个 agent）
+            # Use multi-agent controller (one agent per slice)
             self.agent = MultiAgentController(n_agents=self.n_slices, action_dim=3)
             print(f"✅ Multi-Agent Controller initialized with {self.n_slices} agents.")
 
@@ -126,7 +126,7 @@ class SC_pipeline:
             loss = (self.train_config['w_recon'] * rec_loss +
                     self.train_config['w_mean'] * mean_loss +
                     self.train_config['w_tri'] * tri_loss +
-                    0.1 * causal_loss)  # 因果损失权重设为0.1
+                    0.1 * causal_loss)  # Causal loss weight set to 0.1
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5.)
             self.optimizer.step()
@@ -273,7 +273,7 @@ class SC_BC_pipeline:
         self.batch_id = torch.tensor(adata.obs['slice_id'].to_numpy(), dtype=torch.float32)
 
         self.agent = MultiAgentController(n_agents=len(set(adata.obs['slice_id'])), action_dim=3)
-        # ↑ 根据切片数量创建对应智能体，每个控制三个loss权重
+        # ↑ Create corresponding agents based on slice count, each controlling three loss weights
 
         if self.imputation:
             self.X = torch.FloatTensor(self.adata.X.copy()).to(self.device)
@@ -299,9 +299,9 @@ class SC_BC_pipeline:
 
         for epoch in pbar:
 
-            # ======== 🧠 新增：智能体决策环节 ========
-            actions = self.agent.select_actions()  # 每个agent生成动作
-            # 把每个agent的动作映射到损失权重上
+            # ======== 🧠 New: agent decision step ========
+            actions = self.agent.select_actions()  # Each agent generates actions
+            # Map each agent's actions to loss weights
             avg_action = actions.mean(axis=0)
             self.train_config['w_recon'] = float(avg_action[0])
             self.train_config['w_mean'] = float(avg_action[1])
@@ -328,8 +328,8 @@ class SC_BC_pipeline:
             with torch.no_grad():
                 self.model.momentum_update()
 
-            # ======== 🧠 新增：反馈给agent ========
-            reward = -loss.item()  # 用loss的负数做reward
+            # ======== 🧠 New: feedback to agent ========
+            reward = -loss.item()  # Use negative loss as reward
             rewards = np.array([reward] * self.agent.n_agents)
             self.agent.update(rewards)
             # ====================================

@@ -419,7 +419,7 @@ class GLNSampler_BC(torch.nn.Module):
         rows, cols = locality_adj.nonzero()
         data = locality_adj.data
 
-        # 创建稀疏张量
+        # Create sparse tensor
         locality_adj = torch.sparse_coo_tensor(
             torch.tensor(np.vstack([rows, cols]), device=self.device),
             torch.tensor(data, dtype=torch.float32, device=self.device),
