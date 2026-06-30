@@ -15,9 +15,9 @@ MACWT (Multi-scale Adaptive Causal Wavelet Transform) is a comprehensive analyti
   - `Func.py`: Utility and helper functions.
   - `Utils.py`: Data preprocessing utilities.
   - `agent1.py`: Multi-agent controller with random exploration strategy for per-slice loss weight tuning.
-- **/Benchmark**: Contains implementations of 12 baseline methods for comparative evaluation (CCST, DeepST, DiffusionST, GraphST, SEDR, SPACEL, SPIRAL, STAGATE, STAligner, STitch3D, SpaGCN, stDCL).
+- **/Basis**: Contains implementations of 12 baseline methods for comparative evaluation (CCST, DeepST, DiffusionST, GraphST, SEDR, SPACEL, SPIRAL, STAGATE, STAligner, STitch3D, SpaGCN, stDCL).
 - **/Config**: YAML configuration files for each dataset (DLPFC, MBA, ME3, MERFISH, MOB, STARmap, osmFISH).
-- **/Reproduction_Notebook**: Jupyter notebooks to reproduce the results presented in the manuscript.
+- **/run**: Jupyter notebooks to reproduce the results presented in the manuscript.
 - **requirement.txt**: List of required Python packages.
 
 ---
@@ -73,7 +73,7 @@ Configuration files for each dataset are provided in the `/Config` directory, sp
     python main.py --config Config/DLPFC.yaml
     ```
 
-5. **To reproduce manuscript results**, run the notebooks in `/Reproduction_Notebook` corresponding to each dataset.
+5. **To reproduce manuscript results**, run the notebooks in `/run` corresponding to each dataset.
 
 ---
 
